@@ -6,10 +6,16 @@ $(document).ready(function() {
 
 });
 
+ var myRequestAnimationFrame = window.requestAnimationFrame ||
+ 	window.webkitRequestAnimationFrame ||
+ 	window.mozRequestAnimationFrame ||
+ 	function(callback) {
+      return setTimeout(callback, 1000 / 60);
+	};
 
 function Game($game) {
 	this.$board =  $game.find('.board');
-	this.speed = 10;
+	this.speed = 1;
 	this.pause = false;
 	this.gameOver = false;
 	this.player = new Player(this.$board);
@@ -24,29 +30,30 @@ Game.prototype.run = function() {
 	var game = this;
 	var $player = game.player.$player;
 
-	window.setInterval(function() {
+	if (game.gameOver || game.pause) {
+		return;
+	}
 
-		if (game.gameOver || game.pause) {
-			return;
+	$.each(game.barriers, function(i) {
+
+		this.move();
+
+		if ($player.collidesWith(this.$barrier).length) {
+			game.gameOver = true;
+			game.$text.text("GAME OVER!");
 		}
 
-		$.each(game.barriers, function(i) {
+		if ($player.offset().top > (game.$board.height() + $player.height())){
+			game.pause = true;
+			game.$text.text("WIN!");
+		}
 
-			this.move();
+	});
 
-			if ($player.collidesWith(this.$barrier).length) {
-				game.gameOver = true;
-				game.$text.text("GAME OVER!");
-			}
+   	setTimeout(function() {
+    	return myRequestAnimationFrame(game.run.bind(game));
+	}, this.speed);
 
-			if ($player.offset().top > (game.$board.height() + $player.height())){
-				game.pause = true;
-				game.$text.text("WIN!");
-			}
-
-		});
-
-	}, game.speed);
 };
 
 Game.prototype.initKeyListener = function() {
